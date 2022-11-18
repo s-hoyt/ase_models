@@ -92,7 +92,9 @@ while(True):
     if(isAffected(trueMother) and hasHets(root,"mother") or
        isAffected(trueFather) and hasHets(root,"father") or
        isAffected(trueChild) and hasHets(root,"child")):
-        hasEvidence=1
+
+        if(hasHets(root,"mother") and hasHets(root,"father") and hasHets(root,"child")):
+            hasEvidence=1
     if(hasEvidence): triosWithEvidence+=1
     if(isCorrect(trueMother,trueFather,trueChild,mother,father,child)):
         right+=1
@@ -106,9 +108,11 @@ N=right+wrong
 acc=float(right)/float(N)
 print(round(acc*100,3),"% correct",sep="")
 print(triosWithEvidence," trios with evidence, out of ",numTrios,sep="")
-accWithEvidence=float(rightWithEvidence)/ \
-                 float(rightWithEvidence+wrongWithEvidence)
-print(round(accWithEvidence*100,3),"% correct among trios with evidence",
-      sep="")
+if triosWithEvidence > 0:
 
-
+    accWithEvidence=float(rightWithEvidence)/ \
+        float(rightWithEvidence+wrongWithEvidence)
+    print(round(accWithEvidence*100,3),"% correct among trios with evidence",
+          sep="")
+else:
+    print("0% correct among trios with evidence")

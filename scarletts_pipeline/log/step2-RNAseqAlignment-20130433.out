@@ -1,0 +1,12 @@
+samtools 1.14-rhel8
+STAR 2.7.5c
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> start with HG00096 15:34:30
+gzip: /datacommons/allenlab/stephanie/output/RNAseq/HG00096/HG00096.no_chr.content.SNPs.hets.vcf.gz: No such file or directory
+Nov 16 15:34:30 ..... started STAR run
+Nov 16 15:34:31 ..... loading genome
+Nov 16 15:36:12 ..... loading variations VCF
+
+EXITING because of FATAL INPUT FILE ERROR: could not find any SNPs in VCF file: /dev/fd/63
+SOLUTION: check formatting of the VCF file; unzip VCF file or use process substitution.
+
+Nov 16 15:36:12 ...... FATAL ERROR, exiting

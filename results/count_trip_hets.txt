@@ -1,0 +1,50 @@
+var_10_reads_20_theta_0.5_truth.essex
+238  number of genes with at least 1 triple het site out of 1000 genes 
+
+828  number of triple het sites
+
+var_10_reads_30_theta_0.25_truth.essex
+238  number of genes with at least 1 triple het site out of 1000 genes 
+
+828  number of triple het sites
+
+var_10_reads_10_theta_0.5_truth.essex
+238  number of genes with at least 1 triple het site out of 1000 genes 
+
+828  number of triple het sites
+
+var_7_reads_30_theta_0.5_truth.essex
+168  number of genes with at least 1 triple het site out of 1000 genes 
+
+411  number of triple het sites
+
+var_5_reads_30_theta_0.5_truth.essex
+164  number of genes with at least 1 triple het site out of 1000 genes 
+
+369  number of triple het sites
+
+var_10_reads_50_theta_0.5_truth.essex
+238  number of genes with at least 1 triple het site out of 1000 genes 
+
+828  number of triple het sites
+
+var_10_reads_30_theta_0.75_truth.essex
+238  number of genes with at least 1 triple het site out of 1000 genes 
+
+828  number of triple het sites
+
+var_10_reads_100_theta_0.5_truth.essex
+238  number of genes with at least 1 triple het site out of 1000 genes 
+
+828  number of triple het sites
+
+var_3_reads_30_theta_0.5_truth.essex
+153  number of genes with at least 1 triple het site out of 1000 genes 
+
+285  number of triple het sites
+
+var_2_reads_30_theta_0.5_truth.essex
+78  number of genes with at least 1 triple het site out of 1000 genes 
+
+101  number of triple het sites
+

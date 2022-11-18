@@ -31,7 +31,7 @@ def parseParmString(parmString):
 def evalTrioModel(parmString,dataDir,outputsDir):
     truth=dataDir+"/"+parmString+"_truth.essex"
     predictions=outputsDir+"/"+parmString+".output"
-    cmd="python3 ~/ase_models/eval1_stephanie.py "+truth+" "+predictions
+    cmd="python3 ~/ase_models/eval_only_triphet_genes.py "+truth+" "+predictions
     text=Pipe.run(cmd)
     rex.findOrDie("(.*)% correct among trios with evidence",text)
     acc=float(rex[1])/100

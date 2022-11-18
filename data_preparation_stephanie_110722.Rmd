@@ -1,0 +1,200 @@
+---
+title: "data_preparation"
+output: html_document
+date: "2022-08-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+source("/hpc/group/allenlab/scarlett/output/RNAseq/from_little_damon/helper.R")
+```
+
+## Step1. read in raw data
+```{r}
+filename="/hpc/group/allenlab/scarlett/output/RNAseq/445_samples_output.tsv"
+df<-read.delim(filename,header=TRUE,sep="\t")
+length(unique(df$sample))
+head(df)
+```
+## Step2. clean data
+```{r}
+length(unique(df$sample))
+#445
+df_cleaned<-cleandata(df)
+head(df_cleaned)
+length(unique(df_cleaned$sample))
+#445
+```
+## Step3. annotate geneset, and saved cleaned dataset
+```{r}
+### annotation geneID
+genesetDir="/hpc/group/allenlab/scarlett/output/RNAseq/from_little_damon/gene_sets"
+conversion_annotation <- read.delim(paste0(genesetDir,"/ensemble_HGNC.txt",sep=""),header=TRUE,sep="\t")
+conversion_annotation2 <- read.delim(paste0(genesetDir,"/manual_annotation_geneID.tsv",sep=""),header=TRUE,sep="\t")
+conversion_annotation2$Gene.stable.ID<-gsub("\\..*","",conversion_annotation2$geneID)
+conversion_annotation2<-conversion_annotation2%>%
+  select(-geneID)
+anno_geneID<-rbind(conversion_annotation,conversion_annotation2)
+#   Gene.stable.ID Gene.name
+#1 ENSG00000210049     MT-TF
+
+### mapping recombination rates
+rr_anno <- read.delim("/hpc/group/allenlab/scarlett/recombination_map_Supp/1000G_snvs.annot/CS_HRR_exome_final.bed",header=TRUE,sep="\t")
+rr_anno$RR_region<-gsub("exome_*","",rr_anno$name)
+rr_anno$RR_region<-gsub('[0-9]+', '', rr_anno$RR_region)
+rr_anno$Gene.name<-rr_anno$gene
+filtered_rr<-rr_anno%>%group_by(gene)%>%dplyr::summarize(num=n_distinct(RR_region))%>%filter(num==1)
+consistent_genelist<-filtered_rr$gene
+rr_anno_sub<-rr_anno%>%filter(gene%in%consistent_genelist)
+length(unique(rr_anno$gene))     #16408
+length(unique(rr_anno_sub$gene)) #15129
+rr_anno_sub<-rr_anno_sub%>%select(chr,Gene.name,RR_region)%>%unique()
+#rr_anno%>%group_by(gene)%>%dplyr::summarize(num=n_distinct(RR_region))%>%arrange(desc(num))
+
+### annotating
+df_cleaned$Gene.stable.ID<-gsub("\\..*","",df_cleaned$geneID)
+conversion_annotation_rr<-join(anno_geneID,rr_anno_sub,type="left")
+df_cleaned_annotation<-join(df_cleaned,conversion_annotation_rr,type="left")
+
+### geneset
+imprinted_geneset=anova_geneset("imprinted_gene_lists.tsv",genesetDir)
+#geneset imprinted_gene_lists.tsv has 127 genes
+haploInsufficient_geneset1=anova_geneset("ClinGen_Haploinsufficient_genes.tsv",genesetDir)
+#geneset ClinGen_Haploinsufficient_genes.tsv has 294 genes
+haploInsufficient_geneset2=anova_geneset("RVIS_Haploinsufficiency_OMIM.txt",genesetDir)
+#geneset RVIS_Haploinsufficiency_OMIM.txt has 175 genes
+lofTolerant_geneset=anova_geneset("homozygous_lof_tolerant_twohit.tsv",genesetDir)
+#geneset homozygous_lof_tolerant_twohit.tsv has 330 genes
+mgiEssential_geneset=anova_geneset("mgi_essential.tsv",genesetDir)
+#geneset mgi_essential.tsv has 2454 genes
+stillBirth_geneset=anova_geneset("stillbirth_candidates.txt",genesetDir)
+#geneset stillbirth_candidates.txt has 24 genes
+ADdisease_geneset=anova_geneset("omim_AD_disease_genes.txt",genesetDir)
+#geneset omim_AD_disease_genes.txt has 1083 genes
+
+df_cleaned_annotation1<-df_cleaned_annotation%>%
+  dplyr::mutate(haploinsufficient_geneset1=ifelse(Gene.name%in%haploInsufficient_geneset1,"clinGen haploinsufficient genes","other genes"))%>%
+  dplyr::mutate(geneset1=ifelse(Gene.name%in%haploInsufficient_geneset1,1,0))
+df_cleaned_annotation2<-df_cleaned_annotation1%>%
+  dplyr::mutate(haploinsufficient_geneset2=ifelse(Gene.name%in%haploInsufficient_geneset2,"RVIS haploinsufficient genes","other genes"))%>%
+  dplyr::mutate(geneset2=ifelse(Gene.name%in%haploInsufficient_geneset2,1,0))
+df_cleaned_annotation3<-df_cleaned_annotation2%>%
+  dplyr::mutate(imprinted_geneset=ifelse(Gene.name%in%imprinted_geneset,"imprinted genes","other genes"))%>%
+  dplyr::mutate(geneset3=ifelse(imprinted_geneset=="imprinted genes",1,0))
+df_cleaned_annotation4<-df_cleaned_annotation3%>%
+  dplyr::mutate(lof_tolerant_geneset=ifelse(Gene.name%in%lofTolerant_geneset,"lof tolerant genes","other genes"))%>%
+  dplyr::mutate(geneset4=ifelse(Gene.name%in%lofTolerant_geneset,1,0))
+df_cleaned_annotation5<-df_cleaned_annotation4%>%
+  dplyr::mutate(stillBirth_geneset=ifelse(Gene.name%in%stillBirth_geneset,"still birth genes","other genes"))%>%
+  dplyr::mutate(geneset5=ifelse(stillBirth_geneset=="still birth genes",1,0))
+df_cleaned_annotation6<-df_cleaned_annotation5%>%
+  dplyr::mutate(ADdisease_geneset=ifelse(Gene.name%in%ADdisease_geneset,"AD disease genes","other genes"))%>%
+  dplyr::mutate(geneset6=ifelse(ADdisease_geneset!="other genes",1,0))
+df_cleaned_annotation7<-df_cleaned_annotation6%>%
+  dplyr::mutate(mgiEssential_geneset=ifelse(Gene.name%in%mgiEssential_geneset,"mgi essential genes","other genes"))%>%
+  dplyr::mutate(geneset7=ifelse(mgiEssential_geneset!="other genes",1,0))
+df_cleaned_annotation8<-df_cleaned_annotation7%>%
+  dplyr::mutate(new_imprinted_geneset=ifelse(Gene.name=="PEG10","new imprinted genes","other genes"))%>%
+  dplyr::mutate(new_imprinted_geneset=ifelse(Gene.name=="SNRPN","new imprinted genes",new_imprinted_geneset))%>%
+  dplyr::mutate(new_imprinted_geneset=ifelse(is.na(Gene.name),"other genes",new_imprinted_geneset))%>%
+  dplyr::mutate(geneset8=ifelse(new_imprinted_geneset=="new imprinted genes",1,0))
+df_cleaned_annotation10<-df_cleaned_annotation8%>%
+  dplyr::mutate(haploinsufficient_geneset=ifelse(Gene.name%in%haploInsufficient_geneset1,"haploinsufficient genes","other genes"))%>%
+  dplyr::mutate(haploinsufficient_geneset=ifelse(Gene.name%in%haploInsufficient_geneset2,"haploinsufficient genes",haploinsufficient_geneset))%>%
+  dplyr::mutate(geneset10=ifelse(haploinsufficient_geneset=="haploinsufficient genes",1,0))
+
+length(unique(df_cleaned_annotation1$sample))
+length(unique(df_cleaned_annotation2$sample))
+length(unique(df_cleaned_annotation3$sample))
+length(unique(df_cleaned_annotation4$sample))
+length(unique(df_cleaned_annotation5$sample))
+length(unique(df_cleaned_annotation6$sample))
+length(unique(df_cleaned_annotation7$sample))
+length(unique(df_cleaned_annotation8$sample))
+length(unique(df_cleaned_annotation10$sample))
+
+df_cleaned_annotation_factored_cleaned=clean_geneset(df_cleaned_annotation10)
+```
+[1] "Input data has 2 genes from new imprinted_geneset"
+[1] "Input data has 187 genes from haploinsufficient_geneset1"
+[1] "Input data has 158 genes from haploinsufficient_geneset2"
+[1] "Input data has 272 genes from haploinsufficient_geneset"
+[1] "Input data has 284 genes from lof_tolerant_geneset"
+[1] "Input data has 724 genes from ADdisease"
+[1] "Input data has 2243 genes from mgiEssential"
+
+```{r}
+write.table(df_cleaned_annotation_factored_cleaned, "/home/scarlett/data/445_samples_output_cleaned_geneset.tsv", append = FALSE, sep = " \t", dec = ".",row.names = FALSE, col.names = TRUE)
+#write.table(df_cleaned_annotation_factored_cleaned, "/home/scarlett/data/445_samples_output_cleaned_geneset.tsv", append = FALSE, sep = " \t", dec = ".",row.names = FALSE, col.names = TRUE)
+
+df_cleaned_annotation_factored_cleaned%>%filter(Gene.stable.ID=="ENSG00000177879")%>%slice(1)%>%select(geneID,Gene.stable.ID,Gene.name)
+```
+
+
+## Step4. filter genes that are in at least two individuals per ancestry
+```{r}
+df_unfiltered <- read.delim("/home/scarlett/data/445_samples_output_cleaned_geneset.tsv",header=TRUE,sep="\t")
+table(df_cleaned_annotation_factored_cleaned$RR_region)
+#    CS    HRR 
+#717151 484996 
+df_cleaned_annotation_factored_cleaned<-df_cleaned_annotation_factored_cleaned%>%
+  mutate(RR_region=ifelse(is.na(RR_region),"normal",RR_region))
+table(df_cleaned_annotation_factored_cleaned$RR_region)
+#    CS    HRR normal 
+#775073 524387 852016
+n_individual=2
+n_ancestry=5
+df_filtered_445_1=filtering(df_cleaned_annotation_factored_cleaned,1,n_individual,n_ancestry)
+```
+[1] "Gene filtering: at least 2 individuals having ASE per ancestry ; at least 5 ancestries have data"
+[1] "Filtered data has 143 genes from haploinsufficient_geneset1"
+[1] "Filtered data has 120 genes from haploinsufficient_geneset2"
+[1] "Filtered data has 56 genes from imprinted_geneset"
+[1] "Filtered data has 194 genes from lof_tolerant_geneset"
+[1] "Filtered data has 21 genes from still birth"
+[1] "Filtered data has 538 genes from ADdisease"
+[1] "Filtered data has 1804 genes from mgiEssential"
+[1] "Filtered data has 2 genes from new imprinted_geneset"
+[1] "Filtered data has 212 genes from haploinsufficient_geneset"
+[1] "overall geneID number is 16950; after filtering geneID number is 13008"
+```{r}
+df_filtered_445_10=filtering(df_cleaned_annotation_factored_cleaned,10,n_individual,n_ancestry)
+```
+[1] "Gene filtering: at least 2 individuals having ASE per ancestry ; at least 5 ancestries have data"
+[1] "Filtered data has 99 genes from haploinsufficient_geneset1"
+[1] "Filtered data has 77 genes from haploinsufficient_geneset2"
+[1] "Filtered data has 31 genes from imprinted_geneset"
+[1] "Filtered data has 104 genes from lof_tolerant_geneset"
+[1] "Filtered data has 19 genes from still birth"
+[1] "Filtered data has 350 genes from ADdisease"
+[1] "Filtered data has 1338 genes from mgiEssential"
+[1] "Filtered data has 2 genes from new imprinted_geneset"
+[1] "Filtered data has 141 genes from haploinsufficient_geneset"
+[1] "overall geneID number is 12150; after filtering geneID number is 9134"
+
+```{r}
+df_filtered_445_20=filtering(df_cleaned_annotation_factored_cleaned,20,n_individual,n_ancestry)
+```
+```{r}
+df_filtered_445_25=filtering(df_cleaned_annotation_factored_cleaned,25,n_individual,n_ancestry)
+```
+```{r}
+df_filtered_445_30=filtering(df_cleaned_annotation_factored_cleaned,30,n_individual,n_ancestry)
+```
+```{r}
+
+```
+
+```{R}
+df_filtered_445_1 <- read.delim("/home/scarlett/data/445_samples_output_cleaned_geneset_1total_2ind_5anc.tsv",header=TRUE,sep="\t")
+
+write.table(df_filtered_445_1, "/home/scarlett/data/445_samples_output_cleaned_geneset_1total_2ind_5anc.tsv", append = FALSE, sep = " \t", dec = ".",row.names = FALSE, col.names = TRUE)
+write.table(df_filtered_445_10, "/home/scarlett/data/445_samples_output_cleaned_geneset_10total_2ind_5anc.tsv", append = FALSE, sep = " \t", dec = ".",row.names = FALSE, col.names = TRUE)
+write.table(df_filtered_445_20, "/home/scarlett/data/445_samples_output_cleaned_geneset_20total_2ind_5anc.tsv", append = FALSE, sep = " \t", dec = ".",row.names = FALSE, col.names = TRUE)
+write.table(df_filtered_445_25, "/home/scarlett/data/445_samples_output_cleaned_geneset_25total_2ind_5anc.tsv", append = FALSE, sep = " \t", dec = ".",row.names = FALSE, col.names = TRUE)
+write.table(df_filtered_445_30, "/home/scarlett/data/445_samples_output_cleaned_geneset_30total_2ind_5anc.tsv", append = FALSE, sep = " \t", dec = ".",row.names = FALSE, col.names = TRUE)
+```
+
