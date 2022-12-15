@@ -1,0 +1,10 @@
+vars	facs	mean_in	mean_out	median_in	median_out	var_in	var_out	sd_in	sd_out	c_test
+haploinsufficient_geneset1	clinGen haploinsufficient genes	NA	NA	NA	NA	NA	NA	NA	NA	0.181
+haploinsufficient_geneset2	RVIS haploinsufficient genes	NA	NA	NA	NA	NA	NA	NA	NA	0.479
+imprinted_geneset	imprinted genes	NA	NA	NA	NA	NA	NA	NA	NA	0
+lof_tolerant_geneset	lof tolerant genes	NA	NA	NA	NA	NA	NA	NA	NA	0
+stillBirth_geneset	still birth genes	0.024089399438529342	NA	0.010993790452985874	NA	0.001310929304429732	NA	0.036206757717720764	NA	0.12
+ADdisease_geneset	AD disease genes	NA	NA	NA	NA	NA	NA	NA	NA	0.062
+mgiEssential_geneset	mgi essential genes	NA	NA	NA	NA	NA	NA	NA	NA	0.139
+new_imprinted_geneset	new imprinted genes	0.2561810202588132	NA	0.2561810202588132	NA	0.015774282306700825	NA	0.1255957097463955	NA	0.031
+haploinsufficient_geneset	haploinsufficient genes	NA	NA	NA	NA	NA	NA	NA	NA	0.251

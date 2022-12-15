@@ -1,0 +1,10 @@
+titles	vars	lepage_normal_HRR	lepage_normal_CS	lepage_CS_HRR	cucconi_normal_HRR	cucconi_normal_CS	cucconi_CS_HRR
+haploinsufficient_geneset1	geneset1	0	0	0	0	0	0
+haploinsufficient_geneset2	geneset2	0.13020000000000198	0	0	0.124	0	0
+imprinted_geneset	geneset3	0.0010000000000000002	0	0	0	0	0
+lof_tolerant_geneset	geneset4	0	0	0	0	0	0
+stillBirth_geneset	geneset5	0.07970000000000126	1e-4	0.16879999999999773	0.066	0	0.162
+ADdisease_geneset	geneset6	7.000000000000001e-4	0	0	0.001	0	0
+mgiEssential_geneset	geneset7	0	NA	0	0	1	0
+new_imprinted_geneset	geneset8	NA	NA	0	1	1	0
+haploinsufficient_geneset	geneset10	0	0	0	0	0	0
