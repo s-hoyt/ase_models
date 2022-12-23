@@ -603,3 +603,101 @@ for(i in 1:nrow(geneset_mat)){
 
 # write_tsv(shift_test, "~/ase_models/shift_test_gene_median.tsv")
 # write_tsv(sum_stats_2, "~/ase_models/sum_stats_2_gene_median.tsv")
+
+
+#####
+##mixed linear model
+
+lm_data <- data_filtered_anno %>% select(sample, 
+                                         geneID,
+                                         abslog2_posterior_mean, 
+                                         RR_region, contains("geneset")) %>% 
+  mutate(sample_num = str_sub(sample, start = 3) %>% as.numeric(),
+         RR_region = factor(x = RR_region, levels = c("normal", "CS", "HRR")))
+
+library(lme4)
+geneset_cols <- paste0("geneset", c(seq(1,8), 10))
+ase_lm_null = lmer(log(abslog2_posterior_mean) ~ (1 | geneID), data = lm_data)
+
+#geneset models
+ase_lm_list <- list()
+for(i in geneset_cols){
+  ase_lm = lmer(log(abslog2_posterior_mean) ~ get(i) + (1 | geneID), data = lm_data)
+  ase_lm_list[[i]] <- ase_lm
+}
+
+p_values <- tibble(geneset = as.character(), 
+                   intercept = as.numeric(), 
+                   beta = as.numeric(), 
+                   pvalue = as.numeric(), .rows = 0)
+
+for(i in geneset_cols){
+  intercept <- summary(ase_lm_list[[i]])$coefficients[1]
+  beta <-  summary(ase_lm_list[[i]])$coefficients[2]
+  anova <- anova(ase_lm_null, ase_lm_list[[i]])
+  p_values <- add_row(.data = p_values, 
+                      geneset = i, 
+                      intercept = intercept,
+                      beta = beta,
+                      pvalue = anova$`Pr(>Chisq)`[2])
+}
+
+#rr region model
+ase_lm_rr = lmer(log(abslog2_posterior_mean) ~ RR_region + (1 | geneID), data = lm_data)
+anova(ase_lm_null, ase_lm_rr)
+
+#interaction models
+ase_lm_interaction_null_list <- list()
+ase_lm_interaction_list <- list()
+for(i in geneset_cols){
+  ase_lm_null_int = lmer(log(abslog2_posterior_mean) ~ get(i) + RR_region + (1 | geneID), data = lm_data)
+  ase_lm = lmer(log(abslog2_posterior_mean) ~ get(i) + RR_region + get(i) * RR_region + (1 | geneID), data = lm_data)
+  
+  ase_lm_interaction_null_list[[i]] <- ase_lm_null_int
+  ase_lm_interaction_list[[i]] <- ase_lm
+}
+
+p_values <- tibble(geneset = as.character(), 
+                   null_intercept = as.numeric(), 
+                   null_geneset_beta = as.numeric(), 
+                   null_RR_CS_beta = as.numeric(), 
+                   null_RR_HRR_beta = as.numeric(), 
+                   model_intercept = as.numeric(), 
+                   model_geneset_beta = as.numeric(), 
+                   model_RR_CS_beta = as.numeric(), 
+                   model_RR_HRR_beta = as.numeric(),
+                   geneset_CS_interaction = as.numeric(),
+                   geneset_HRR_interaction = as.numeric(),
+                   pvalue = as.numeric(), .rows = 0)
+
+for(i in geneset_cols){
+  null_intercept <- summary(ase_lm_interaction_null_list[[i]])$coefficients[1]
+  null_geneset_beta <- summary(ase_lm_interaction_null_list[[i]])$coefficients[2]
+  null_RR_CS_beta <- summary(ase_lm_interaction_null_list[[i]])$coefficients[3]
+  null_RR_HRR_beta <- summary(ase_lm_interaction_null_list[[i]])$coefficients[4]
+  
+  model_intercept <- summary(ase_lm_interaction_list[[i]])$coefficients[1]
+  model_geneset_beta <- summary(ase_lm_interaction_list[[i]])$coefficients[2]
+  model_RR_CS_beta <- summary(ase_lm_interaction_list[[i]])$coefficients[3]
+  model_RR_HRR_beta <- summary(ase_lm_interaction_list[[i]])$coefficients[4]
+  
+  geneset_CS_interaction <- summary(ase_lm_interaction_list[[i]])$coefficients[5]
+  geneset_HRR_interaction <- summary(ase_lm_interaction_list[[i]])$coefficients[6]
+  
+  anova <- anova(ase_lm_interaction_null_list[[i]], ase_lm_interaction_list[[i]])
+  
+  p_values <- add_row(.data = p_values, 
+                      geneset = i, 
+                      null_intercept = null_intercept, 
+                      null_geneset_beta = null_geneset_beta, 
+                      null_RR_CS_beta = null_RR_CS_beta, 
+                      null_RR_HRR_beta = null_RR_HRR_beta, 
+                      model_intercept = model_intercept, 
+                      model_geneset_beta = model_geneset_beta, 
+                      model_RR_CS_beta = model_RR_CS_beta, 
+                      model_RR_HRR_beta = model_RR_HRR_beta,
+                      geneset_CS_interaction = geneset_CS_interaction,
+                      geneset_HRR_interaction = geneset_HRR_interaction,
+                      pvalue = anova$`Pr(>Chisq)`[2])
+}
+
