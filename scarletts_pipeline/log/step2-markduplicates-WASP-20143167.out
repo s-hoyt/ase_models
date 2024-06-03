@@ -1,8 +1,0 @@
-dcc-aryalab-01
-samtools 1.14-rhel8
-Java 1.8.0_60
-Picard 2.18.2, use: java -jar $PICARD
-
-Loading Picard/2.18.2
-  Loading requirement: Java/1.8.0_60
-/var/spool/slurmd/job20143167/slurm_script: line 31: $2: unbound variable
