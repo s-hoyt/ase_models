@@ -2,3 +2,4 @@
 *.stdout
 *tmp*
 *.error
+*~
